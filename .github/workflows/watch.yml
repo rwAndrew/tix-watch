@@ -1,0 +1,27 @@
+name: indievox-watch
+
+on:
+  workflow_dispatch:        # 可手動按 Run workflow 啟動
+  schedule:
+    - cron: "17 */3 * * *"  # 每 3 小時排一輪，確保上一輪結束後立刻有下一輪接手
+
+concurrency:
+  group: indievox-watch
+  cancel-in-progress: false # 一次只跑一輪，下一輪排隊等
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests beautifulsoup4
+      - name: Watch tickets
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          KEYWORDS: ""        # 只看高雄就填 "高雄"；全部場次留空
+          MAX_MINUTES: "340"  # 每輪跑約 5 小時 40 分
+        run: python indievox_watch.py
